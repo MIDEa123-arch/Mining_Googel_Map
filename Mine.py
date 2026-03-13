@@ -133,8 +133,14 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             search_box.clear()
             search_box.send_keys(tu_khoa)
             search_box.send_keys(Keys.ENTER)
-            time.sleep(2.5) 
-        except: continue
+            
+            # 🚨 BẢN VÁ: Ép Bot phải chờ đến khi danh sách quán hiện ra (Tối đa 15s)
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.hfpxzc")))
+            time.sleep(1.5) # Danh sách hiện ra rồi thì thở 1 nhịp cho mượt
+            
+        except Exception as e: 
+            print("   -> [LAG MẠNG / KHÔNG CÓ QUÁN] Load quá 15s không thấy danh sách. Chuyển!")
+            continue
         
         cuon_het_danh_sach_quan()
         
