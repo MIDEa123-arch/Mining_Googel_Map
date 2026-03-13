@@ -2,7 +2,7 @@
 
 Vào trong code đổi CAU_HINH_CHUYEN_MUC được phân công để mine. Code chạy lâu lên đến hơn 1 ngày lận nên cần phải treo, code lỗi hoặc bị ngắt thì cứ bấm chạy lại (nên chạy thử 1-5 quán để xem code chạy đúng ko ko đúng kêu t)
 
-HUY
+HUY:
 CAU_HINH_CHUYEN_MUC = {
     # Phổ thông
     "Rạp chiếu phim": 3, 
@@ -20,7 +20,7 @@ CAU_HINH_CHUYEN_MUC = {
     "Phòng hòa nhạc": 1
 }
 
-PHƯỚC
+PHƯỚC:
 CAU_HINH_CHUYEN_MUC = {
     # Văn hóa/Lịch sử
     "Bảo tàng": 2, 
@@ -42,7 +42,7 @@ CAU_HINH_CHUYEN_MUC = {
     "Điểm tham quan du lịch": 5, 
     "Chợ nổi": 1
 }
-LÂM
+LÂM:
 CAU_HINH_CHUYEN_MUC = {
     # Nhóm Shopping
     "Trung tâm thương mại": 3, # Mall thì 1 quận có 2-3 cái là căng
