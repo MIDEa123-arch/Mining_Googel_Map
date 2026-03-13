@@ -161,6 +161,17 @@ def doi_trang_quan_load_xong(timeout=10):
     except:
         return False
 
+def doi_url_thay_doi(url_cu, timeout=5):
+    """FIX: Đợi URL thay đổi sau khi click vào quán mới"""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        url_hien_tai = driver.current_url
+        if url_hien_tai != url_cu and "@" in url_hien_tai:
+            # URL đã thay đổi và có tọa độ (@lat,lng)
+            return True
+        time.sleep(0.3)
+    return False
+
 # ==========================================
 # BẮT ĐẦU CHẠY CHÍNH
 # ==========================================
@@ -240,11 +251,19 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             time.sleep(0.5)
             
             # Click vào quán
+            url_truoc_khi_click = driver.current_url
             try:
                 driver.execute_script("arguments[0].click();", the_a)
             except:
                 print(f"   -> [LỖI CLICK] {ten_dia_diem}")
                 index_quan_hien_tai += 1
+                continue
+            
+            # FIX: Đợi URL thay đổi trước
+            if not doi_url_thay_doi(url_truoc_khi_click, timeout=5):
+                print(f"   -> [URL KHÔNG ĐỔI] {ten_dia_diem} - Bỏ qua")
+                index_quan_hien_tai += 1
+                ve_lai_danh_sach_quan()
                 continue
             
             # FIX QUAN TRỌNG: Đợi trang quán MỚI load xong hoàn toàn
@@ -254,24 +273,31 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
                 ve_lai_danh_sach_quan()
                 continue
             
+            # FIX BUG TỌA ĐỘ: Đợi thêm để URL kịp thay đổi hoàn toàn
+            time.sleep(1)
+            
             # Khởi tạo dữ liệu mới
             row_data = {col: "" for col in cot_co_ban}
             row_data["TenDiaDiem"] = ten_dia_diem
             row_data["NhomGoc"] = nhom
             row_data["Quan"] = quan
             
-            # Lấy tọa độ từ URL hiện tại
+            # Lấy tọa độ từ URL hiện tại (sau khi đã đợi đủ)
             link_hien_tai = driver.current_url
             toa_do = lay_toa_do_tu_url(link_hien_tai)
             row_data["ToaDo"] = toa_do
             
-            # FIX: Check trùng theo tọa độ
+            # FIX: Check trùng theo tọa độ - NHƯNG chỉ skip nếu trùng CẢ tên
             if toa_do and toa_do in danh_sach_toa_do:
-                print(f"   -> [BỎ QUA - TRÙNG TỌA ĐỘ] {ten_dia_diem} ({toa_do})")
-                danh_sach_da_duyet.add(key_check)
-                index_quan_hien_tai += 1
-                ve_lai_danh_sach_quan()
-                continue
+                # Kiểm tra xem có phải cùng tên không
+                if key_check in danh_sach_da_duyet:
+                    print(f"   -> [BỎ QUA - TRÙNG HOÀN TOÀN] {ten_dia_diem} ({toa_do})")
+                    index_quan_hien_tai += 1
+                    ve_lai_danh_sach_quan()
+                    continue
+                else:
+                    # Cùng tọa độ nhưng khác tên - có thể là quán trong cùng tòa nhà
+                    print(f"   -> [CẢNH BÁO] {ten_dia_diem} có cùng tọa độ với quán khác, nhưng vẫn lấy vì tên khác")
             
             if link_hien_tai in danh_sach_link_di_lac:
                 index_quan_hien_tai += 1
