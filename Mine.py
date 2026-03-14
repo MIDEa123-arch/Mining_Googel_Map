@@ -319,12 +319,37 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             try: row_data["MucGia"] = driver.find_element(By.CSS_SELECTOR, "div.MNVeJb.eXOdV").text.split('\n')[0].strip()
             except: pass
 
+            # ==========================================
+            # BÓC TÁCH GIỜ MỞ CỬA (FIX LỖI DÍNH ICON)
+            # ==========================================
             try:
+                # Tìm tất cả các thẻ tr (dòng) của bảng giờ
                 cac_the_tr = driver.find_elements(By.CSS_SELECTOR, "tr.y0skZc")
                 for tr in cac_the_tr:
-                    thu = tr.find_element(By.CSS_SELECTOR, "td.ylH6lf").get_attribute("textContent").strip()
-                    gio = tr.find_element(By.CSS_SELECTOR, "td.mxowUb").get_attribute("textContent").strip()
-                    if f"GioMoCua_{thu}" in row_data: row_data[f"GioMoCua_{thu}"] = gio
+                    # Lấy tất cả các cột (td) trong dòng đó
+                    cac_cot = tr.find_elements(By.TAG_NAME, "td")
+                    
+                    if len(cac_cot) >= 2:
+                        # Cột 1 là Tên thứ (bỏ qua cột 3 chứa icon )
+                        thu = cac_cot[0].get_attribute("textContent").strip()
+                        cot_gio = cac_cot[1]
+                        
+                        # Tuyệt chiêu: Lấy aria-label vì Google đã format sẵn có dấu phẩy rất đẹp
+                        gio = cot_gio.get_attribute("aria-label")
+                        
+                        if not gio:
+                            # Phương án dự phòng nếu web không có aria-label
+                            cac_ca_lam = cot_gio.find_elements(By.TAG_NAME, "li")
+                            if cac_ca_lam:
+                                gio = ", ".join([ca.get_attribute("textContent").strip() for ca in cac_ca_lam])
+                            else:
+                                gio = cot_gio.get_attribute("textContent").strip()
+                        
+                        # Làm gọn text: đổi chữ " đến " thành dấu "-" cho giống chuẩn hiển thị
+                        gio = gio.replace(" đến ", " - ")
+                        
+                        if f"GioMoCua_{thu}" in row_data: 
+                            row_data[f"GioMoCua_{thu}"] = gio
             except: pass
 
             # ==========================================
