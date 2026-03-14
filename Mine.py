@@ -150,7 +150,7 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             print(f"\n⏭️ BỎ QUA: [{nhom} - {quan}] (Đã cào đủ {so_luong_da_luy_ke}/{max_quota_hien_tai})")
             continue
 
-        tu_khoa = f"{nhom} {quan} Thành phố Hồ Chí Minh"
+        tu_khoa = f"Danh sách {nhom} {quan} Thành phố Hồ Chí Minh"
         print(f"\n" + "="*50)
         print(f"🚀 ĐANG QUÉT: {tu_khoa} (Tiến độ: {so_luong_da_luy_ke}/{max_quota_hien_tai})")
         print("="*50)
