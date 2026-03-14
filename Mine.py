@@ -24,11 +24,12 @@ DANH_SACH_QUAN = [
 ]
 
 CAU_HINH_CHUYEN_MUC = {
-    "Quán ăn": 10, "Nhà hàng": 8, "Nhà hàng gia đình": 5, "Quán ăn vỉa hè": 8,
-    "Nhà hàng hải sản": 5, "Quán nướng": 8, "Nhà hàng chay": 5, "Quán phở": 5, "Quán bún bò": 5, "Nhà hàng lẩu": 8,
-    "Nhà hàng Thái": 3, "Nhà hàng Hàn Quốc": 4, "Nhà hàng Nhật Bản": 4, "Nhà hàng Ý": 3, "Nhà hàng món Âu": 4,
-    "Quán cà phê": 15, "Quán trà sữa": 10, "Tiệm bánh": 5, "Quán kem": 3, "Quán sinh tố": 3,
-    "Quán nhậu": 10, "Quán bar": 3, "Pub": 3, "Câu lạc bộ đêm": 2, "Beer club": 3
+    "Quán bar": 5
+    # "Quán ăn": 10, "Nhà hàng": 8, "Nhà hàng gia đình": 5, "Quán ăn vỉa hè": 8,
+    # "Nhà hàng hải sản": 5, "Quán nướng": 8, "Nhà hàng chay": 5, "Quán phở": 5, "Quán bún bò": 5, "Nhà hàng lẩu": 8,
+    # "Nhà hàng Thái": 3, "Nhà hàng Hàn Quốc": 4, "Nhà hàng Nhật Bản": 4, "Nhà hàng Ý": 3, "Nhà hàng món Âu": 4,
+    # "Quán cà phê": 15, "Quán trà sữa": 10, "Tiệm bánh": 5, "Quán kem": 3, "Quán sinh tố": 3,
+    # "Quán nhậu": 10,  "Pub": 3, "Câu lạc bộ đêm": 2, "Beer club": 3
 }
 
 SO_LUONG_REVIEW_CAN_LAY = 50 
@@ -457,24 +458,50 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
                 for khoi in cac_khoi_review:
                     try:
                         ten = khoi.find_element(By.CSS_SELECTOR, "div.d4r55").text.strip()
+                        # Lấy nội dung chữ
                         noi_dung = khoi.find_element(By.CSS_SELECTOR, "span.wiI7pd").text.strip()
                         try:
                             sao_text = khoi.find_element(By.CSS_SELECTOR, "span.kvMYJc").get_attribute("aria-label")
                             sao = re.sub(r'\D', '', sao_text) + " sao" if sao_text else "? sao"
                         except: sao = "? sao"
-                        if ten and noi_dung: danh_sach_review_text.append(f"[{ten} - {sao}]: {noi_dung}")
+                        
+                        # 1. Chỉ đưa vào danh sách NẾU NỘI DUNG CÓ CHỮ
+                        if ten and noi_dung: 
+                            danh_sach_review_text.append(f"[{ten} - {sao}]: {noi_dung}")
                     except: pass
                 
-                if danh_sach_review_text:
-                    row_data["DanhGiaChiTiet"] = " \n---\n ".join(danh_sach_review_text)
-                    print(f"      -> Đã bóc & ép dịch được {len(danh_sach_review_text)} bài đánh giá!")
-            except: print("      -> (Mẹo: Quán này không có tab đánh giá)")
+                # 2. CHỐT CHẶN: Đếm xem bóc được bao nhiêu cái CÓ CHỮ
+                if len(danh_sach_review_text) < 10:
+                    print(f"      -> [BỎ QUA] Quán chỉ có {len(danh_sach_review_text)} bài đánh giá CÓ CHỮ (yêu cầu >= 10).")
+                    danh_sach_link_di_lac.add(href_quan)
+                    index_quan_hien_tai += 1
+                    ve_lai_danh_sach_quan()
+                    continue # Bỏ qua ngay quán này, không lưu file!
+                
+                # Vượt qua chốt chặn -> Ép vào Data
+                row_data["DanhGiaChiTiet"] = " \n---\n ".join(danh_sach_review_text)
+                print(f"      -> Đã bóc & ép dịch được {len(danh_sach_review_text)} bài đánh giá CÓ CHỮ!")
+                
+            except: 
+                print("      -> [BỎ QUA] Lỗi lấy đánh giá hoặc không có tab đánh giá.")
+                danh_sach_link_di_lac.add(href_quan)
+                index_quan_hien_tai += 1
+                ve_lai_danh_sach_quan()
+                continue # Nếu không có tab đánh giá thì chắc chắn không đủ 10 review, bỏ qua luôn!
             
+            # --- CHỈ NHỮNG QUÁN VƯỢT QUA ĐƯỢC CHỐT CHẶN TRÊN MỚI CHẠY ĐƯỢC XUỐNG ĐÂY ĐỂ LƯU FILE ---
             danh_sach_da_duyet.add(key_check)
             if toa_do: danh_sach_toa_do.add(toa_do)
             
-            df_row = pd.DataFrame([row_data])
-            df_row.to_csv(FILE_LUU, mode='a', header=not os.path.exists(FILE_LUU), index=False, encoding='utf-8-sig')
+            # Vòng lặp chống crash do đang mở Excel
+            while True:
+                try:
+                    df_row = pd.DataFrame([row_data])
+                    df_row.to_csv(FILE_LUU, mode='a', header=not os.path.exists(FILE_LUU), index=False, encoding='utf-8-sig')
+                    break
+                except PermissionError:
+                    print(f"   -> 🛑 LỖI: File đang bị mở (chắc là Excel). Vui lòng TẮT EXCEL ĐI! Bot sẽ thử lưu lại sau 5 giây...")
+                    time.sleep(5)
                 
             so_luong_da_luy_ke += 1
             tien_do_da_cao[key_tien_do] = so_luong_da_luy_ke
