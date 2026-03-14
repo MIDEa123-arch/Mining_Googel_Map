@@ -49,81 +49,6 @@ driver = webdriver.Chrome(options=chrome_options)
 driver.get("https://www.google.com/maps?hl=vi") 
 time.sleep(2)
 
-# ==========================================
-# HÀM 1: FIX TỌA ĐỘ TRÙNG (ĐÃ THÊM CHỐT CHẶN URL)
-# ==========================================
-def fix_duplicate_coordinates():
-    print("\n🔧 GIAI ĐOẠN 1: BẮT ĐẦU FIX TỌA ĐỘ TRÙNG...")
-    try:
-        df = pd.read_csv(FILE_LUU, encoding='utf-8-sig')
-    except:
-        print("   -> Không có file hoặc không đọc được file để fix. Chuyển sang cào mới.")
-        return
-
-    df['ToaDo'] = df['ToaDo'].fillna('')
-    toa_do_counts = df[df['ToaDo']!='']['ToaDo'].value_counts()
-    toa_do_trung = toa_do_counts[toa_do_counts>1].index.tolist()
-
-    if len(toa_do_trung) == 0:
-        print("   ✔ Không có tọa độ trùng. Chuyển sang cào mới.")
-        return
-
-    print(f"   -> Phát hiện {len(toa_do_trung)} tọa độ trùng")
-
-    for toa_do in toa_do_trung:
-        indices = df[df['ToaDo']==toa_do].index.tolist()
-        for i in indices:
-            row = df.loc[i]
-            ten = row['TenDiaDiem']
-            dia_chi = row['DiaChi']
-            quan = row['Quan']
-
-            print(f"   -> Đang sửa: {ten}")
-
-            if pd.notna(dia_chi): query = f"{ten}, {dia_chi}"
-            else: query = f"{ten}, {quan}, Hồ Chí Minh"
-
-            # LƯU LẠI URL CŨ TRƯỚC KHI TÌM QUÁN MỚI
-            url_truoc_khi_tim = driver.current_url
-
-            try:
-                search_box = WebDriverWait(driver,10).until(EC.presence_of_element_located((By.NAME,"q")))
-                search_box.clear()
-                search_box.send_keys(query)
-                search_box.send_keys(Keys.ENTER)
-            except: continue
-            
-            # Đợi load danh sách
-            time.sleep(2.5)
-
-            try:
-                first = driver.find_element(By.CSS_SELECTOR,"a.hfpxzc")
-                driver.execute_script("arguments[0].click();",first)
-            except: pass
-
-            # FIX: ÉP CODE PHẢI CHỜ ĐẾN KHI URL THỰC SỰ THAY ĐỔI
-            thoi_gian_cho = 0
-            while driver.current_url == url_truoc_khi_tim and thoi_gian_cho < 10:
-                time.sleep(0.5)
-                thoi_gian_cho += 0.5
-            
-            # Thêm 1.5 giây để thanh URL load đủ phần tọa độ @lat,lng của quán mới
-            time.sleep(1.5)
-
-            url = driver.current_url
-            match = re.search(r'@([-+]?\d+\.\d+),([-+]?\d+\.\d+)',url)
-
-            if match:
-                toa_do_moi = f"{match.group(1)}, {match.group(2)}"
-                if toa_do_moi != toa_do:
-                    df.at[i,'ToaDo'] = toa_do_moi
-                    print(f"      ✔ Đã sửa -> {toa_do_moi}")
-                    # AUTO SAVE: Ngắt ngang vẫn giữ file
-                    df.to_csv(FILE_LUU,index=False,encoding='utf-8-sig')
-                else:
-                    print(f"      ⚠️ URL đã đổi nhưng tọa độ vẫn trùng (Quán sát nhau)")
-
-    print("✅ GIAI ĐOẠN 1: FIX XONG TỌA ĐỘ")
 
 # ==========================================
 # CÁC HÀM BỔ TRỢ CHO ĐÀO DATA
@@ -182,12 +107,6 @@ def doi_url_thay_doi(url_cu, timeout=10):
         if url_hien_tai != url_cu and "@" in url_hien_tai: return True
         time.sleep(0.3)
     return False
-
-# ==========================================
-# BƯỚC 1: GỌI HÀM FIX TỌA ĐỘ TRƯỚC
-# ==========================================
-if os.path.exists(FILE_LUU):
-    fix_duplicate_coordinates()
 
 # ==========================================
 # BƯỚC 2: KHỞI TẠO BỘ NHỚ TỪ FILE ĐÃ FIX ĐỂ CHUẨN BỊ MINE
