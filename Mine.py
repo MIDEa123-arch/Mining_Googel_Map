@@ -45,9 +45,15 @@ cot_co_ban = [
 # ==========================================
 print(f"=> KHỞI ĐỘNG CỖ MÁY CÀO (CHẾ ĐỘ ÉP TÌM BẰNG URL)...")
 chrome_options = Options()
+
+# BÍ KÍP ÉP 100% TIẾNG VIỆT TỪ GỐC TRÌNH DUYỆT
+chrome_options.add_argument("--lang=vi-VN") 
+
 # chrome_options.add_argument("--headless=new") 
 driver = webdriver.Chrome(options=chrome_options)
-driver.get("https://www.google.com/maps?hl=vi")
+
+# Link trang chủ (Dù không có ?hl=vi thì nó vẫn sẽ ra tiếng Việt vì trình duyệt đã là tiếng Việt)
+driver.get("https://www.google.com/maps?hl=vi") 
 time.sleep(2)
 
 # ==========================================
