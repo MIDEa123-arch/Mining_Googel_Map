@@ -289,10 +289,22 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             try:
                 the_danh_gia = driver.find_element(By.CSS_SELECTOR, "div.F7nice")
                 cac_span = the_danh_gia.find_elements(By.XPATH, "./span")
-                row_data["DanhGia"] = cac_span[0].find_element(By.XPATH, ".//span[@aria-hidden='true']").text.strip()
-                chuoi_so_luong = cac_span[1].find_element(By.XPATH, ".//span[contains(@aria-label, 'đánh giá')]").text.strip()
-                row_data["SoDanhGia"] = int(re.sub(r'\D', '', chuoi_so_luong))
-            except: pass
+                
+                # Bóc điểm số (Ví dụ: 4,5)
+                row_data["DanhGia"] = cac_span[0].find_element(By.XPATH, ".//span[@aria-hidden='true']").get_attribute("textContent").strip()
+                
+                # Bóc text thô của số lượng đánh giá (Bất chấp tiếng Anh/Việt, nó sẽ lấy ra "(1.244)")
+                chuoi_so_luong = cac_span[1].get_attribute("textContent").strip()
+                
+                # Dùng Regex vứt hết dấu ngoặc, dấu chấm, chữ cái... chỉ giữ lại đúng con số
+                so_luong_thuc_te = re.sub(r'\D', '', chuoi_so_luong)
+                
+                if so_luong_thuc_te:
+                    row_data["SoDanhGia"] = int(so_luong_thuc_te)
+                else:
+                    row_data["SoDanhGia"] = 0
+            except: 
+                pass
                 
             if not row_data.get("SoDanhGia") or row_data["SoDanhGia"] <= 10:
                 print(f"      -> [BỎ QUA] Không đủ 10 đánh giá.")
