@@ -258,12 +258,31 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
             dia_chi_text = row_data["DiaChi"]
             mau_kiem_tra_quan = rf"{quan}(?!\d)" 
             
-            if not dia_chi_text or "Hồ Chí Minh" not in dia_chi_text or "Việt Nam" not in dia_chi_text or not re.search(mau_kiem_tra_quan, dia_chi_text, re.IGNORECASE):
+            dia_chi_text = row_data["DiaChi"]
+            
+            if not dia_chi_text:
+                danh_sach_link_di_lac.add(href_quan)
+                index_quan_hien_tai += 1
+                ve_lai_danh_sach_quan()
+                continue
+
+            # Ép về chữ thường để dễ so sánh, không sợ viết hoa/viết thường
+            dia_chi_lower = dia_chi_text.lower()
+            
+            # Check bao lô cả tiếng Anh lẫn tiếng Việt, viết tắt
+            co_hcm = "hồ chí minh" in dia_chi_lower or "ho chi minh" in dia_chi_lower or "hcm" in dia_chi_lower
+            
+            # Check đúng tên quận (Giữ nguyên Regex cực chuẩn của bạn)
+            mau_kiem_tra_quan = rf"{quan}(?!\d)" 
+            dung_quan = re.search(mau_kiem_tra_quan, dia_chi_text, re.IGNORECASE)
+
+            # Bỏ luôn việc ép phải có chữ Việt Nam/Vietnam. Chỉ cần ở HCM và đúng Quận là lụm!
+            if not (co_hcm and dung_quan):
                 print(f"   -> [BỎ QUA - LẠC ĐỊA BÀN] {ten_dia_diem} ({dia_chi_text})")
                 danh_sach_link_di_lac.add(href_quan)
                 index_quan_hien_tai += 1
                 ve_lai_danh_sach_quan()
-                continue 
+                continue
 
             print(f"   -> [{so_luong_da_luy_ke + 1}/{max_quota_hien_tai}] Đang lụm: {ten_dia_diem} ({toa_do})")
 
