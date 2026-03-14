@@ -47,7 +47,7 @@ print(f"=> KHỞI ĐỘNG CỖ MÁY CÀO (CHẾ ĐỘ ÉP TÌM BẰNG URL)...")
 chrome_options = Options()
 # chrome_options.add_argument("--headless=new") 
 driver = webdriver.Chrome(options=chrome_options)
-driver.get("https://www.google.com/maps") 
+driver.get("https://www.google.com/maps?hl=vi")
 time.sleep(2)
 
 # ==========================================
@@ -327,31 +327,59 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
                     if f"GioMoCua_{thu}" in row_data: row_data[f"GioMoCua_{thu}"] = gio
             except: pass
 
+            # ==========================================
+            # BÓC TÁCH TAB GIỚI THIỆU & TIỆN ÍCH (CẤU TRÚC MỚI)
+            # ==========================================
             try:
-                tab_gioi_thieu = driver.find_element(By.XPATH, "//button[@role='tab' and contains(@aria-label, 'Giới thiệu')]")
+                # XPath bọc thép tìm tab Giới thiệu
+                xpath_tab_gt = "//button[@role='tab' and (contains(@aria-label, 'Giới thiệu') or contains(., 'Giới thiệu') or contains(., 'About'))]"
+                tab_gioi_thieu = WebDriverWait(driver, 4).until(EC.presence_of_element_located((By.XPATH, xpath_tab_gt)))
                 driver.execute_script("arguments[0].click();", tab_gioi_thieu)
-                time.sleep(1) 
+                
+                # Tăng thời gian chờ để các thẻ div tiện ích kịp load ra màn hình
+                time.sleep(2) 
+                
+                # 1. Bóc text Giới thiệu chung (Nếu có)
                 try: row_data["GioiThieu"] = driver.find_element(By.CSS_SELECTOR, "span.HlvSq").get_attribute("textContent").strip()
                 except: pass
 
+                # 2. Bóc danh sách Tiện ích
                 try:
-                    cac_the_li = driver.find_elements(By.CSS_SELECTOR, "div.iP2t7d.fontBodyMedium li.hpLkke")
+                    # Tìm tất cả khối div chứa tiện ích theo class mới nhất
+                    cac_div_tien_ich = driver.find_elements(By.CSS_SELECTOR, "div.iNvpkb")
                     tat_ca_tags = []
-                    for li in cac_the_li:
-                        text_item = li.find_element(By.CSS_SELECTOR, "span[aria-label]").get_attribute("textContent").strip()
+                    
+                    for div in cac_div_tien_ich:
                         try:
-                            icon = li.find_element(By.CSS_SELECTOR, "span.google-symbols").get_attribute("textContent").strip()
-                            trang_thai = "(ko có)" if "" in icon else "(có)"
-                        except: trang_thai = "(có)"
-                        tat_ca_tags.append(f"{text_item} {trang_thai}")
-                    if tat_ca_tags: row_data["TienIch_Tags"] = " | ".join(tat_ca_tags)
+                            # Icon tick () luôn nằm trong thẻ có chữ google-symbols
+                            icon_text = div.find_element(By.CSS_SELECTOR, "span.google-symbols").get_attribute("textContent").strip()
+                            
+                            # Tên tiện ích là thẻ span không chứa chữ google-symbols
+                            text_span = div.find_element(By.CSS_SELECTOR, "span:not(.google-symbols)")
+                            ten_tien_ich = text_span.get_attribute("textContent").strip()
+                            
+                            if ten_tien_ich:
+                                # Nếu icon là dấu tick  thì là (có), ngược lại là (ko có)
+                                trang_thai = "(có)" if "" in icon_text else "(ko có)"
+                                tat_ca_tags.append(f"{ten_tien_ich} {trang_thai}")
+                        except: pass
+                        
+                    if tat_ca_tags: 
+                        row_data["TienIch_Tags"] = " | ".join(tat_ca_tags)
                 except: pass
-            except: pass
+            except: 
+                print("      -> (Mẹo: Quán này không có tab Giới thiệu)")
 
             try:
-                tab_danh_gia = driver.find_element(By.XPATH, "//button[@role='tab' and contains(@aria-label, 'Bài đánh giá')]")
+                # XPath bọc thép: Tìm chữ "đánh giá" HOẶC "Reviews" HOẶC "reviews" nằm trong aria-label hoặc text của nút
+                xpath_tab = "//button[@role='tab' and (contains(@aria-label, 'đánh giá') or contains(@aria-label, 'Reviews') or contains(@aria-label, 'reviews') or contains(., 'Bài đánh giá') or contains(., 'Reviews'))]"
+                
+                # Bắt buộc đợi tối đa 5 giây cho cái Tab xuất hiện (Tránh lỗi do mạng lag)
+                tab_danh_gia = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, xpath_tab)))
+                
+                # Dùng Javascript click thẳng vào nút
                 driver.execute_script("arguments[0].click();", tab_danh_gia)
-                time.sleep(1.5) 
+                time.sleep(2.5) # Chờ 2.5s cho danh sách review bên dưới load ra hẳn
 
                 so_luong_hien_tai = 0
                 so_lan_scroll_khong_tang = 0
