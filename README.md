@@ -3,7 +3,7 @@
 Vào trong code đổi CAU_HINH_CHUYEN_MUC được phân công để mine. Code chạy lâu lên đến hơn 1 ngày lận nên cần phải treo, code lỗi hoặc bị ngắt thì cứ bấm chạy lại (nên chạy thử 1-5 quán để xem code chạy đúng ko ko đúng kêu t)
 
 Nếu xem file mà thấy tọa độ bị trùng thì chạy file fixLocation để fix nha và nếu thấy output có lỗi như 00x00... dì đó thì sửa cái tên chuyên mục lại 
-vd: "Quán karaoke" -> "karaoke" do Quán karaoke nó nhảy thẳng vô địa điểm luôn nên bị lỗi 
+vd: "Quán karaoke" -> "karaoke" do Quán karaoke + Tên quận nó nhảy thẳng vô địa điểm luôn nên bị lỗi 
 
 ```python
 HUY:
