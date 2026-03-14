@@ -1,6 +1,7 @@
 import pandas as pd
 import time
 import re
+import urllib.parse # Thêm thư viện này để mã hóa URL
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -23,10 +24,10 @@ DANH_SACH_QUAN = [
 ]
 
 CAU_HINH_CHUYEN_MUC = {
-    "Quán ăn": 10, "Nhà hàng": 8, "Nhà hàng, quán ăn gia đình": 5, "Quán ăn vỉa hè": 8,
+    "Quán ăn": 10, "Nhà hàng": 8, "Nhà hàng gia đình": 5, "Quán ăn vỉa hè": 8,
     "Nhà hàng hải sản": 5, "Quán nướng": 8, "Nhà hàng chay": 5, "Quán phở": 5, "Quán bún bò": 5, "Nhà hàng lẩu": 8,
-    "Nhà hàng Thái": 3, "Nhà hàng Hàn Quốc": 4, "Nhà hàng Nhật Bản": 4, "Nhà hàng Ý": 3, "Món Âu": 4,
-    "Quán cà phê": 15, "Quán trà sữa": 10, "Tiệm bánh": 5, "Quán kem": 3, "Sinh tố": 3,
+    "Nhà hàng Thái": 3, "Nhà hàng Hàn Quốc": 4, "Nhà hàng Nhật Bản": 4, "Nhà hàng Ý": 3, "Nhà hàng món Âu": 4,
+    "Quán cà phê": 15, "Quán trà sữa": 10, "Tiệm bánh": 5, "Quán kem": 3, "Quán sinh tố": 3,
     "Quán nhậu": 10, "Quán bar": 3, "Pub": 3, "Câu lạc bộ đêm": 2, "Beer club": 3
 }
 
@@ -42,13 +43,12 @@ cot_co_ban = [
 # ==========================================
 # 2. KHỞI TẠO TRÌNH DUYỆT
 # ==========================================
-print(f"=> KHỞI ĐỘNG CỖ MÁY CÀO (SỬA LỖI -> ĐÀO DATA)...")
+print(f"=> KHỞI ĐỘNG CỖ MÁY CÀO (CHẾ ĐỘ ÉP TÌM BẰNG URL)...")
 chrome_options = Options()
 # chrome_options.add_argument("--headless=new") 
 driver = webdriver.Chrome(options=chrome_options)
-driver.get("https://www.google.com/maps?hl=vi") 
+driver.get("https://www.google.com/maps") 
 time.sleep(2)
-
 
 # ==========================================
 # CÁC HÀM BỔ TRỢ CHO ĐÀO DATA
@@ -109,9 +109,9 @@ def doi_url_thay_doi(url_cu, timeout=10):
     return False
 
 # ==========================================
-# BƯỚC 2: KHỞI TẠO BỘ NHỚ TỪ FILE ĐÃ FIX ĐỂ CHUẨN BỊ MINE
+# BƯỚC 1: KHỞI TẠO BỘ NHỚ ĐỂ CHUẨN BỊ MINE
 # ==========================================
-print("\n🚀 GIAI ĐOẠN 2: BẮT ĐẦU CRAWLER (ĐÀO DATA MỚI)...\n")
+print("\n🚀 BẮT ĐẦU CRAWLER (ĐÀO DATA)...\n")
 danh_sach_da_duyet = set()  
 danh_sach_toa_do = set()    
 danh_sach_link_di_lac = set() 
@@ -156,10 +156,12 @@ for nhom, max_quota_hien_tai in CAU_HINH_CHUYEN_MUC.items():
         print("="*50)
 
         try:
-            search_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "q")))
-            search_box.clear()
-            search_box.send_keys(tu_khoa)
-            search_box.send_keys(Keys.ENTER)
+            # =======================================================
+            # ÁP DỤNG CÁCH 2: ÉP TÌM KIẾM BẰNG URL ĐỂ TRÁNH NHẢY THẲNG
+            # =======================================================
+            tu_khoa_url = urllib.parse.quote(tu_khoa)
+            url_search = f"https://www.google.com/maps/search/{tu_khoa_url}"
+            driver.get(url_search)
             
             WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "a.hfpxzc")))
             time.sleep(2)
