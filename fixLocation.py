@@ -1,21 +1,27 @@
 import pandas as pd
 import time
 import re
+import sys
+import os
+
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# ĐỔI THÀNH FIREFOX OPTIONS:
+from selenium.webdriver.firefox.options import Options 
+from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import sys
-import os
+
+# Quản lý driver tự động
+from webdriver_manager.firefox import GeckoDriverManager
 
 sys.stdout.reconfigure(encoding='utf-8')
 
 # ==========================================
 # CẤU HÌNH
 # ==========================================
-FILE_INPUT = "Data_ToanTap_AmThuc_HCM.csv"
+FILE_INPUT = "../Data_ToanTap_AmThuc_HCM.csv"
 FILE_BACKUP = "Data_ToanTap_AmThuc_HCM_BACKUP.csv"
 FILE_CHECKPOINT = "fix_smart_checkpoint.csv"
 
@@ -121,7 +127,15 @@ if os.path.exists(FILE_CHECKPOINT):
 print(f"\n🚀 Bước 4: Khởi động trình duyệt...")
 chrome_options = Options()
 # chrome_options.add_argument("--headless=new")  # Bỏ comment để chạy ẩn
-driver = webdriver.Chrome(options=chrome_options)
+firefox_options = Options()
+# firefox_options.add_argument("--headless")  # Bật dòng này nếu muốn chạy ẩn (không hiện cửa sổ)
+
+# 2. Khởi tạo Driver (Dùng webdriver-manager để tự động quản lý driver)
+driver = webdriver.Firefox(
+    service=Service(GeckoDriverManager().install()), 
+    options=firefox_options
+)
+
 driver.get("https://www.google.com/maps?hl=vi")
 time.sleep(2)
 
